@@ -72,47 +72,57 @@ class XSSScanner:
         }
         
         try:
+            if '?' not in url:
+                print(f"\n{Fore.RED}[!] Error: No parameters found in URL")
+                print(f"{Fore.YELLOW}[!] Example URL format: http://example.com?param=value{Style.RESET_ALL}")
+                results['status'] = 'error'
+                results['error'] = 'No parameters in URL'
+                return results
+
             params = self._get_parameters(url)
             
             if not params:
-                print(f"\n{Fore.YELLOW}[!] No parameters found to test in URL{Style.RESET_ALL}")
-                print(f"{Fore.BLUE}[*] Consider testing for other types of XSS vulnerabilities manually{Style.RESET_ALL}")
-            else:
-                print(f"\n{Fore.CYAN}[*] Testing {len(params)} parameters for XSS vulnerabilities{Style.RESET_ALL}")
-                for param in params:
-                    for payload in self.payloads:
-                        try:
-                            test_url = self._inject_payload(url, param, payload)
-                            response = requests.get(
-                                test_url,
-                                verify=False,
-                                timeout=10,
-                                headers={
-                                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-                                }
-                            )
+                print(f"\n{Fore.RED}[!] Error: Invalid parameter format in URL")
+                print(f"{Fore.YELLOW}[!] Parameters should be in format: param=value{Style.RESET_ALL}")
+                results['status'] = 'error'
+                results['error'] = 'Invalid parameter format'
+                return results
+
+            print(f"\n{Fore.CYAN}[*] Testing {len(params)} parameters for XSS vulnerabilities{Style.RESET_ALL}")
+            for param in params:
+                for payload in self.payloads:
+                    try:
+                        test_url = self._inject_payload(url, param, payload)
+                        response = requests.get(
+                            test_url,
+                            verify=False,
+                            timeout=10,
+                            headers={
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                            }
+                        )
+                        
+                        if self._check_reflection(response.text, payload, test_url):
+                            status_color = self._get_status_color(response.status_code)
+                            content_type = response.headers.get('Content-Type', '')
                             
-                            if self._check_reflection(response.text, payload, test_url):
-                                status_color = self._get_status_color(response.status_code)
-                                content_type = response.headers.get('Content-Type', '')
-                                
-                                print(f"\nTesting payload: [{status_color}{response.status_code}{Style.RESET_ALL}] {payload}")
-                                print(f"{Fore.CYAN}[*] Content-Type: {content_type}{Style.RESET_ALL}")
-                                print(f"{Fore.GREEN}[+] XSS Found! Working payload reflected in response")
-                                print(f"{Fore.GREEN}[+] Vulnerable URL: {test_url}{Style.RESET_ALL}\n")
-                                
-                                results['vulnerable_params'].append({
-                                    'parameter': param,
-                                    'payload': payload,
-                                    'method': 'GET',
-                                    'status_code': response.status_code,
-                                    'content_type': content_type,
-                                    'vulnerable_url': test_url
-                                })
-                                results['status'] = 'vulnerable'
-                                
-                        except requests.exceptions.RequestException:
-                            continue
+                            print(f"\nTesting payload: [{status_color}{response.status_code}{Style.RESET_ALL}] {payload}")
+                            print(f"{Fore.CYAN}[*] Content-Type: {content_type}{Style.RESET_ALL}")
+                            print(f"{Fore.GREEN}[+] XSS Found! Working payload reflected in response")
+                            print(f"{Fore.GREEN}[+] Vulnerable URL: {test_url}{Style.RESET_ALL}\n")
+                            
+                            results['vulnerable_params'].append({
+                                'parameter': param,
+                                'payload': payload,
+                                'method': 'GET',
+                                'status_code': response.status_code,
+                                'content_type': content_type,
+                                'vulnerable_url': test_url
+                            })
+                            results['status'] = 'vulnerable'
+                            
+                    except requests.exceptions.RequestException:
+                        continue
             
             return results
             
@@ -124,7 +134,11 @@ class XSSScanner:
         parsed = urlparse(url)
         if not parsed.query:
             return []
-        return [param.split('=')[0] for param in parsed.query.split('&')]
+        params = []
+        for param in parsed.query.split('&'):
+            if '=' in param:
+                params.append(param.split('=')[0])
+        return params
 
     def _inject_payload(self, url: str, param: str, payload: str) -> str:
         parsed = urlparse(url)
