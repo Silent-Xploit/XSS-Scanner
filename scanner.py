@@ -48,7 +48,7 @@ class XSSScanner:
  ██╔╝ ██╗███████║███████║    ███████║╚██████╗██║  ██║██║ ╚████║██║ ╚████║███████╗██║  ██║
  ╚═╝  ╚═╝╚══════╝╚══════╝    ╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
                                                                                     v1.0
-                                                              Author: Silent-Xploit
+                                                              Author: AAYUSH POKHAREL | det0x
         """
         print(banner)
         print(f"{Fore.CYAN}Starting XSS Scanner...{Style.RESET_ALL}\n")
