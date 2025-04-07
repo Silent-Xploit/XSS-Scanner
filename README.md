@@ -13,7 +13,7 @@ A powerful Cross-Site Scripting (XSS) vulnerability scanner written in Python.
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/xss-scanner.git
+git clone https://github.com/Silent-Xploit/XSS-Scanner.git
 cd xss-scanner
 
 # Install requirements
